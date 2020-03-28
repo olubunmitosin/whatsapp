@@ -8,7 +8,7 @@
     "package": "./build.sh",
     "build:snap": "electron-builder --linux snap"
   },
-  "repository": "https://gitlab.com/olubunmi708/whatsapp",
+  "repository": "https://github.com/olubunmitosin/whatsapp",
   "keywords": [
     "Electron",
     "Whatsapp",
