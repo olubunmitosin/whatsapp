@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp",
+  "name": "kesty-whatsapp",
   "version": "1.0.0",
   "description": "An unofficial whatsapp client for Linux",
   "main": "main.js",
