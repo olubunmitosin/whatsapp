@@ -6,9 +6,26 @@
   "scripts": {
     "start": "electron .",
     "package": "./build.sh",
+    "generate:icons": "./ico.sh",
     "build:snap": "electron-builder --linux snap"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
+  "build": {
+    "win": {
+      "target": "nsis",
+      "icon":"./images/icons/win/icon.ico"
+    },
+    "nsis":{
+      "oneClick": false
+    },
+    "dmg": {
+      "icon": "./images/icons/mac/icon.icns"
+    },
+    "linux": {
+      "icon": "./images/icons/png/256x256.png",
+      "category": "social"
+    }
+  },
   "keywords": [
     "Electron",
     "Whatsapp",
