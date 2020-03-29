@@ -12,7 +12,8 @@ grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
 
 parts:
-  main:
-    # See 'snapcraft plugins'
+  src:
+    plugin: nodejs
+    node-packages:
+     - electron
     source: https://github.com/olubunmitosin/whatsapp.git
-    plugin: autotools
