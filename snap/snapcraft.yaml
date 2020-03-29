@@ -14,5 +14,5 @@ confinement: strict # use 'strict' once you have the right plugs and slots
 parts:
   main:
     # See 'snapcraft plugins'
-    source: https://github.com/olubunmitosin/whatsapp
+    source: https://github.com/olubunmitosin/whatsapp.git
     plugin: autotools
