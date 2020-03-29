@@ -1,15 +1,15 @@
 name: kesty-whatsapp # you probably want to 'snapcraft register <name>'
 base: core18 # the base snap is the execution environment for this snap
 version: '1.0.0' # just for humans, typically '1.2+git' or '1.3.2'
-summary: An unofficial whatsapp client for linux # 79 char long summary
+summary: Whatsapp for Linux # 79 char long summary
 description: |
-  An unofficial version of whatsapp for linux. Simple, easy and flexible to use.
+  This is an unofficial version of whatsapp for linux destros.
+  It is concise, simple, easy and flexible to use.
 
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
 
 parts:
   whatsapp:
-    plugin: nodejs
-    source: https://github.com/olubunmitosin/whatsapp.git
-    source-type: git
+    # See 'snapcraft plugins'
+    plugin: nil
