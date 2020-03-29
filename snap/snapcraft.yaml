@@ -13,4 +13,5 @@ confinement: strict # use 'strict' once you have the right plugs and slots
 parts:
   whatsapp:
     # See 'snapcraft plugins'
-    plugin: nil
+    plugin: dump
+    source: ./dist/whatsapp_$SNAPCRAFT_PROJECT_VERSION_amd64.snap
