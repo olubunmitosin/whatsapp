@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp",
+  "name": "kesty-whatsapp",
   "version": "1.2.0",
   "description": "An unofficial whatsapp client for Linux",
   "main": "main.js",
@@ -7,7 +7,9 @@
     "start": "electron .",
     "package": "./build.sh",
     "generate:icons": "./ico.sh",
-    "build:snap": "electron-builder --linux snap"
+    "build:snap": "electron-builder --linux snap",
+    "build:tar": "electron-builder --linux tar.xz",
+    "build:win": "electron-builder --windows nsis"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
   "build": {
@@ -23,7 +25,17 @@
     },
     "linux": {
       "icon": "./images/icons/png/256x256.png",
-      "category": "social"
+      "category": "social",
+      "target": [
+        {
+          "target": "snap",
+          "arch": [
+            "x64",
+            "arm64",
+            "ia32"
+          ]
+        }
+      ]
     }
   },
   "keywords": [
