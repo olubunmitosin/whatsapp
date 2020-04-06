@@ -14,4 +14,4 @@ parts:
   whatsapp:
     # See 'snapcraft plugins'
     plugin: dump
-    source: ./dist/whatsapp_$SNAPCRAFT_PROJECT_VERSION_amd64.snap
+    source: ./dist/kesty-whatsapp_$SNAPCRAFT_PROJECT_VERSION_amd64.snap
