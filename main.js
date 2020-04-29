@@ -1,6 +1,7 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, Tray, ipcMain, screen, session} = require('electron')
+const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session} = require('electron')
 const path = require('path')
+const contextMenu = require('electron-context-menu');
 
 
 
@@ -21,6 +22,28 @@ let url = 'https://web.whatsapp.com/';
 let height = 750;
 let width = 1200;
 
+contextMenu({
+  showInspectElement : false,
+  append: (defaultActions, params, browserWindow) => [
+    {
+      label: 'Open Link in Browser',
+      // Only show it when right-clicking images
+      visible: params.srcURL.length > 0,
+      click: () => {
+        shell.openExternal(params.linkURL).then(r => console.log('error'));
+      }
+    },
+    {
+      label: 'Search Google for “{selection}”',
+      // Only show it when right-clicking text
+      visible: params.selectionText.trim().length > 0,
+      click: () => {
+        shell.openExternal(`https://google.com/search?q=${encodeURIComponent(params.selectionText)}`).then(r => console.log('error'));
+      }
+    }
+  ]
+});
+
 function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({
@@ -28,14 +51,46 @@ function createWindow () {
     height: height,
     icon: appIcon,
     webPreferences: {
+      spellcheck: true,
       nodeIntegration: false, // fails without this because of CommonJS script detection
       preload: path.join(__dirname, 'js', 'browser.js')
     }
-  })
+  });
 
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Exit',
+          click () { app.exit() }
+        }
+      ]
+    },
+    {
+      label: 'Action',
+      submenu: [
+        {
+          label: 'Clear App Data',
+          click () {
+            let dataPath = app.getPath('userData');
+            shell.moveItemToTrash(dataPath);
 
-  //remove default menu tray
-  win.setMenu(null);
+            app.relaunch({args: process.argv.slice(1).concat(['--relaunch'])});
+            app.exit(0);
+            sysTray.destroy();
+          }
+        },
+        {
+          label: 'Reload Application',
+          click () { mainWindow.reload() }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 
   //Set a default user agent
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
@@ -58,6 +113,8 @@ function createWindow () {
       e.preventDefault();
       win.hide();
     }
+
+    return false;
   });
 
 
@@ -83,8 +140,12 @@ setProcess = function() {
   sysTray = new tray(appIcon);
   let contextMenu = menu.buildFromTemplate([
     { label: 'Show', click: function() { showAndCenter(mainWindow); } },
-    { label: 'Quit', click: function() { app.quit(); } }
+    { label: 'Quit', click: function() {
+        app.quit();
+        sysTray.destroy();
+      } }
   ]);
+
   sysTray.setToolTip(appName);
   sysTray.setContextMenu(contextMenu);
 
@@ -102,7 +163,7 @@ setProcess = function() {
 
   page.on('new-window', (e, url) => {
     e.preventDefault();
-    app.shell.openExternal(url);
+    shell.openExternal(url);
   });
 }
 
@@ -115,7 +176,10 @@ app.whenReady().then(setProcess)
 app.on('window-all-closed', function () {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin') {
+    app.quit();
+    sysTray.destroy();
+  }
 })
 
 app.on('activate', () => {

@@ -1,4 +1,5 @@
 node_modules
 dist
 releases
+.idea
 kesty-whatsapp_*_amd64.snap
