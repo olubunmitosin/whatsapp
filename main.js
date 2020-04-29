@@ -1,6 +1,6 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session} = require('electron')
-const path = require('path')
+const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session} = require('electron');
+const path = require('path');
 const contextMenu = require('electron-context-menu');
 
 
@@ -129,8 +129,7 @@ function showAndCenter(win) {
 }
 
 function center(win) {
-  let electronScreen = screen;
-  let size = electronScreen.getPrimaryDisplay().workAreaSize;
+  let size = screen.getPrimaryDisplay().workAreaSize;
   let x = Math.round(size.width / 2 - width / 2);
   let y = Math.round(size.height / 2 - height / 2);
   win.setPosition(x, y);
@@ -165,7 +164,7 @@ setProcess = function() {
     e.preventDefault();
     shell.openExternal(url);
   });
-}
+};
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -180,7 +179,7 @@ app.on('window-all-closed', function () {
     app.quit();
     sysTray.destroy();
   }
-})
+});
 
 app.on('activate', () => {
   showAndCenter(mainWindow);
