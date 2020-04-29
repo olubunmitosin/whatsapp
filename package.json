@@ -15,9 +15,9 @@
   "build": {
     "win": {
       "target": "nsis",
-      "icon":"./images/icons/win/icon.ico"
+      "icon": "./images/icons/win/icon.ico"
     },
-    "nsis":{
+    "nsis": {
       "oneClick": false
     },
     "dmg": {
@@ -50,5 +50,8 @@
   "devDependencies": {
     "electron": "^8.2.0",
     "electron-builder": "^22.4.1"
+  },
+  "dependencies": {
+    "electron-context-menu": "^2.0.0"
   }
 }
