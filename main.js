@@ -2,7 +2,7 @@
 const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session} = require('electron');
 const path = require('path');
 const contextMenu = require('electron-context-menu');
-
+const fs = require('fs');
 
 
 let mainWindow;
@@ -99,13 +99,23 @@ function createWindow () {
   });
 
   // and load the url of the app.
-  win.loadURL(url)
+  win.loadURL(url);
 
   win.on('focus', e => {
     if (unreadNotification) {
       unreadNotification = false;
       sysTray.setImage(appIcon);
     }
+  });
+
+
+  win.webContents.on('did-finish-load', e => {
+    fs.readFile(__dirname + '/css/dark.css', 'utf-8',function (error, data) {
+      if(!error){
+        let formattedCss = data.replace(/\s{2,10}/g, ' ').trim();
+        mainWindow.webContents.insertCSS(formattedCss);
+      }
+    });
   });
 
   win.on('close', e => {
