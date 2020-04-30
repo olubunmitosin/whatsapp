@@ -52,6 +52,7 @@
     "electron-builder": "^22.4.1"
   },
   "dependencies": {
-    "electron-context-menu": "^2.0.0"
+    "electron-context-menu": "^2.0.0",
+    "electron-store": "^5.1.1"
   }
 }
