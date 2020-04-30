@@ -2,7 +2,17 @@
 const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session} = require('electron');
 const path = require('path');
 const contextMenu = require('electron-context-menu');
+const fs = require('fs');
+const Store = require('electron-store');
 
+
+
+//storage store and key identifier
+const storage = new Store();
+const storageKey='kestyW_';
+
+//App theme value holder
+let themeData;
 
 
 let mainWindow;
@@ -57,6 +67,8 @@ function createWindow () {
     }
   });
 
+  themeData = storage.get(storageKey+'theme');
+
   const template = [
     {
       label: 'File',
@@ -68,6 +80,44 @@ function createWindow () {
       ]
     },
     {
+      label: 'Theme',
+      submenu: [
+        {
+          label: 'Light',
+          click () {
+
+            //do nothing if theme data was not set.
+            if ( typeof themeData ===  'undefined' || themeData === 'light') {
+              return false;
+            }
+
+            removeDarkCss();
+            clearStorage();
+          }
+        },
+
+        {
+          label: 'Dark',
+          click () {
+
+            if ( typeof themeData ===  'undefined' || themeData === 'light') {
+              //it's empty, so set dark setting
+              setSetting('theme', 'dark');
+
+              //load dark theme
+              loadDarkCss();
+            }
+
+            if (themeData === 'dark') {
+              return false;
+            }
+
+          } //click ends
+
+        }
+      ]
+    },
+    {
       label: 'Action',
       submenu: [
         {
@@ -75,7 +125,6 @@ function createWindow () {
           click () {
             let dataPath = app.getPath('userData');
             shell.moveItemToTrash(dataPath);
-
             app.relaunch({args: process.argv.slice(1).concat(['--relaunch'])});
             app.exit(0);
             sysTray.destroy();
@@ -99,7 +148,7 @@ function createWindow () {
   });
 
   // and load the url of the app.
-  win.loadURL(url)
+  win.loadURL(url);
 
   win.on('focus', e => {
     if (unreadNotification) {
@@ -107,6 +156,15 @@ function createWindow () {
       sysTray.setImage(appIcon);
     }
   });
+
+  win.webContents.on('did-finish-load', function () {
+    themeData = storage.get(storageKey+'theme');
+    if (typeof themeData !== 'undefined' && themeData === 'dark') {
+      loadDarkCss();
+    }
+
+  });
+
 
   win.on('close', e => {
     if (!isQuitting) {
@@ -119,6 +177,33 @@ function createWindow () {
 
 
   return win;
+}
+
+
+function setSetting(key, value) {
+  storage.set(storageKey+key, value);
+  //refresh the storage value
+  themeData = storage.get(storageKey+'theme');
+}
+
+function loadDarkCss() {
+  fs.readFile(__dirname + '/css/dark.css', 'utf-8',function (error, data) {
+    if(!error){
+      let formattedCss = data.replace(/\s{2,10}/g, ' ').trim();
+      mainWindow.webContents.insertCSS(formattedCss);
+    }
+  });
+}
+
+
+function removeDarkCss() {
+  setSetting('theme', 'light');
+  mainWindow.reload();
+}
+
+
+function clearStorage() {
+  // storage.delete(storageKey + 'theme');
 }
 
 
