@@ -169,8 +169,9 @@ function createWindow () {
 
   session.defaultSession.on('will-download', (event, item, webContents) => {
     // Set the save path, making Electron not to prompt a save dialog.
-    // event.preventDefault();
-    dialog.showSaveDialog({properties: ['openFile', 'openDirectory', 'multiSelections']}).then((result) =>  {});
+    //event.preventDefault();
+    win.allowRendererProcessReuse = true;
+    win.blur();
   });
 
 
