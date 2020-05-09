@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session} = require('electron');
+const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session, dialog } = require('electron');
 const path = require('path');
 const contextMenu = require('electron-context-menu');
 const fs = require('fs');
@@ -48,7 +48,7 @@ contextMenu({
       // Only show it when right-clicking text
       visible: params.selectionText.trim().length > 0,
       click: () => {
-        shell.openExternal(`https://google.com/search?q=${encodeURIComponent(params.selectionText)}`).then(r => console.log('error'));
+        shell.openExternal(`https://google.com/search?q=${encodeURIComponent(params.selectionText)}`).then(r => {});
       }
     }
   ]
@@ -63,6 +63,8 @@ function createWindow () {
     webPreferences: {
       spellcheck: true,
       nodeIntegration: false, // fails without this because of CommonJS script detection
+      allowRunningInsecureContent : true,
+      plugins : true,
       preload: path.join(__dirname, 'js', 'browser.js')
     }
   });
@@ -163,6 +165,12 @@ function createWindow () {
       loadDarkCss();
     }
 
+  });
+
+  session.defaultSession.on('will-download', (event, item, webContents) => {
+    // Set the save path, making Electron not to prompt a save dialog.
+    // event.preventDefault();
+    dialog.showSaveDialog({properties: ['openFile', 'openDirectory', 'multiSelections']}).then((result) =>  {});
   });
 
 
