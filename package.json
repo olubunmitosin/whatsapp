@@ -5,9 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package": "./build.sh",
     "generate:icons": "./ico.sh",
-    "build:snap": "electron-builder --linux snap",
+    "build:snap": "electron-builder --linux --x64 --armv7l --arm64 snap",
     "build:tar": "electron-builder --linux tar.xz",
     "build:win": "electron-builder --windows nsis"
   },
@@ -32,7 +31,7 @@
           "arch": [
             "x64",
             "arm64",
-            "ia32"
+            "armv7l"
           ]
         }
       ]
