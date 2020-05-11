@@ -61,7 +61,7 @@ function createWindow () {
     }
   });
 
-  themeData = storage.get(storageKey+'theme');
+  themeData = storage.get(Constants.storageKey+'theme');
 
   const template = [
     {
@@ -152,7 +152,7 @@ function createWindow () {
   });
 
   win.webContents.on('did-finish-load', function () {
-    themeData = storage.get(storageKey+'theme');
+    themeData = storage.get(Constants.storageKey+'theme');
     if (typeof themeData !== 'undefined' && themeData === 'dark') {
       loadDarkCss();
     }
@@ -187,7 +187,7 @@ function setSetting(key, value) {
   themeData = storage.get(Constants.storageKey+'theme');
 }
 
-function loadDarkCss(mainWindow) {
+function loadDarkCss() {
   fs.readFile(__dirname + '/css/dark.css', 'utf-8',function (error, data) {
     if(!error){
       let formattedCss = data.replace(/\s{2,10}/g, ' ').trim();
