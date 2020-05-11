@@ -9,9 +9,7 @@ description: |
 
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
-
 parts:
-  whatsapp:
-    # See 'snapcraft plugins'
-    plugin: dump
-    source: ./dist/kesty-whatsapp_$SNAPCRAFT_PROJECT_VERSION_amd64.snap
+  my-part:
+    plugin: nil
+

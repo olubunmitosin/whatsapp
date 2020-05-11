@@ -1,36 +1,28 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session, dialog } = require('electron');
 const path = require('path');
-const contextMenu = require('electron-context-menu');
 const fs = require('fs');
+const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
-
+const isDev = require('electron-is-dev');
+const Constants = require('./app/constants');
 
 
 //storage store and key identifier
 const storage = new Store();
-const storageKey='kestyW_';
 
 //App theme value holder
 let themeData;
-
-
 let mainWindow;
 let tray = Tray;
 let menu = Menu;
-let appName = 'WhatsApp';
-let appIcon = path.join(__dirname, 'images/icons/png/1024x1024.png');
-let appIconEvent = path.join(__dirname, 'images/icons/png/32x32.png');
 let ipc = ipcMain;
 let sysTray;
-let isQuitting = false;
-let unreadNotification = false;
 let win;
-
-// Change these to customize the app
-let url = 'https://web.whatsapp.com/';
-let height = 750;
-let width = 1200;
+let height = Constants.height;
+let width = Constants.width;
+let unreadNotification = Constants.unreadNotification;
+let isQuitting = Constants.isQuitting;
 
 contextMenu({
   showInspectElement : false,
@@ -59,7 +51,7 @@ function createWindow () {
   win = new BrowserWindow({
     width: width,
     height: height,
-    icon: appIcon,
+    icon: Constants.appIcon,
     webPreferences: {
       spellcheck: true,
       nodeIntegration: false, // fails without this because of CommonJS script detection
@@ -150,12 +142,12 @@ function createWindow () {
   });
 
   // and load the url of the app.
-  win.loadURL(url);
+  win.loadURL(Constants.url);
 
   win.on('focus', e => {
     if (unreadNotification) {
       unreadNotification = false;
-      sysTray.setImage(appIcon);
+      sysTray.setImage(Constants.appIcon);
     }
   });
 
@@ -190,12 +182,12 @@ function createWindow () {
 
 
 function setSetting(key, value) {
-  storage.set(storageKey+key, value);
+  storage.set(Constants.storageKey + key, value);
   //refresh the storage value
-  themeData = storage.get(storageKey+'theme');
+  themeData = storage.get(Constants.storageKey+'theme');
 }
 
-function loadDarkCss() {
+function loadDarkCss(mainWindow) {
   fs.readFile(__dirname + '/css/dark.css', 'utf-8',function (error, data) {
     if(!error){
       let formattedCss = data.replace(/\s{2,10}/g, ' ').trim();
@@ -229,8 +221,9 @@ function center(win) {
   win.setPosition(x, y);
 }
 
+
 setProcess = function() {
-  sysTray = new tray(appIcon);
+  sysTray = new tray(Constants.appIcon);
   let contextMenu = menu.buildFromTemplate([
     { label: 'Show', click: function() { showAndCenter(mainWindow); } },
     { label: 'Quit', click: function() {
@@ -239,7 +232,7 @@ setProcess = function() {
       } }
   ]);
 
-  sysTray.setToolTip(appName);
+  sysTray.setToolTip(Constants.appName);
   sysTray.setContextMenu(contextMenu);
 
   sysTray.on('click', () => {
@@ -265,6 +258,7 @@ setProcess = function() {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(setProcess)
 
+
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
   // On macOS it is common for applications and their menu bar
@@ -286,7 +280,7 @@ app.on('before-quit', () => {
 ipc.on('change-icon', () => {
   if (!unreadNotification) {
     unreadNotification = true;
-    sysTray.setImage(appIconEvent);
+    sysTray.setImage(Constants.appIconEvent);
   }
 });
 
