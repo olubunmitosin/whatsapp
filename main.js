@@ -14,7 +14,6 @@ const storage = new Store();
 //App theme value holder
 let themeData;
 let mainWindow;
-let tray = Tray;
 let menu = Menu;
 let ipc = ipcMain;
 let sysTray;
@@ -27,14 +26,6 @@ let isQuitting = Constants.isQuitting;
 contextMenu({
   showInspectElement : false,
   append: (defaultActions, params, browserWindow) => [
-    {
-      label: 'Open Link in Browser',
-      // Only show it when right-clicking images
-      visible: params.srcURL.length > 0,
-      click: () => {
-        shell.openExternal(params.linkURL).then(r => console.log('error'));
-      }
-    },
     {
       label: 'Search Google for “{selection}”',
       // Only show it when right-clicking text
@@ -223,7 +214,7 @@ function center(win) {
 
 
 setProcess = function() {
-  sysTray = new tray(Constants.appIcon);
+  sysTray = new Tray(Constants.appIcon);
   let contextMenu = menu.buildFromTemplate([
     { label: 'Show', click: function() { showAndCenter(mainWindow); } },
     { label: 'Quit', click: function() {
