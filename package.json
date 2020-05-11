@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "generate:icons": "./ico.sh",
-    "build:snap": "electron-builder --linux --x64 --armv7l --arm64 snap",
+    "build:snap": "electron-builder --linux --x64 --armv7l snap",
     "build:tar": "electron-builder --linux tar.xz",
     "build:win": "electron-builder --windows nsis"
   },
@@ -30,7 +30,6 @@
           "target": "snap",
           "arch": [
             "x64",
-            "arm64",
             "armv7l"
           ]
         }
