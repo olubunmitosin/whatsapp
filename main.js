@@ -1,12 +1,12 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session, dialog } = require('electron');
+const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
 const isDev = require('electron-is-dev');
 const Constants = require('./app/constants');
-
+const electronLocalShortcut = require('electron-localshortcut');
 
 //storage store and key identifier
 const storage = new Store();
@@ -52,9 +52,18 @@ function createWindow () {
     }
   });
 
+  electronLocalShortcut.register(win, 'Ctrl+F', () => {
+    setFullScreen();
+  });
+
+  electronLocalShortcut.register(win, 'Esc', () => {
+    //Exit full screen
+    win.setFullScreen(false);
+  });
+
   themeData = storage.get(Constants.storageKey+'theme');
 
-  const template = [
+  let template = [
     {
       label: 'File',
       submenu: [
@@ -106,6 +115,12 @@ function createWindow () {
       label: 'Action',
       submenu: [
         {
+          label:  typeof storage.get(Constants.storageKey + 'sound') !== 'undefined' && storage.get(Constants.storageKey + 'sound') === true ? 'Unmute Sound' : 'Mute Sound',
+          click () {
+            handleSoundNotificationSound();
+          }
+        },
+        {
           label: 'Clear App Data',
           click () {
             let dataPath = app.getPath('userData');
@@ -118,6 +133,13 @@ function createWindow () {
         {
           label: 'Reload Application',
           click () { mainWindow.reload() }
+        },
+        {
+          label: 'Toggle Full Screen',
+          accelerator: 'Ctrl+Cmd+F',
+          click() {
+           setFullScreen();
+          }
         }
       ]
     }
@@ -125,6 +147,38 @@ function createWindow () {
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+
+  function setFullScreen() {
+    win.setFullScreen(!win.isFullScreen());
+    notify('Fullscreen Enabled', 'Press Esc key to leave full screen mode.')
+  }
+
+  function handleSoundNotificationSound () {
+    let enableSound = storage.get(Constants.storageKey + 'sound');
+
+    if (typeof enableSound === "undefined" || !enableSound) {
+      //this was not never set, and it's false by default so, mute the sound
+      storage.set(Constants.storageKey+'sound', true);
+      template[2].submenu[0].label = "Unmute Sound";
+      const menu = Menu.buildFromTemplate(template);
+      Menu.setApplicationMenu(menu);
+      win.webContents.audioMuted = true;
+      notify('Sound Muted', 'App sound has been muted completely. Audio, video, and any other sound.');
+      return false;
+    }
+
+    if (enableSound === true) {
+      //Unmute sound
+      storage.set(Constants.storageKey+'sound', false);
+      template[2].submenu[0].label = "Mute Sound";
+
+      const menu = Menu.buildFromTemplate(template);
+      Menu.setApplicationMenu(menu);
+      win.webContents.audioMuted = false;
+      notify('Sound Enabled', 'App sound has been re-enabled');
+      return false;
+    }
+  }
 
   //Set a default user agent
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
@@ -171,6 +225,10 @@ function createWindow () {
   return win;
 }
 
+function notify(title, message) {
+  return (new Notification({title : title, body : message})).show();
+}
+
 
 function setSetting(key, value) {
   storage.set(Constants.storageKey + key, value);
@@ -215,6 +273,8 @@ function center(win) {
 
 setProcess = function() {
   sysTray = new Tray(Constants.appIcon);
+  // Ignore double click events for the tray icon
+  sysTray.setIgnoreDoubleClickEvents(true);
   let contextMenu = menu.buildFromTemplate([
     { label: 'Show', click: function() { showAndCenter(mainWindow); } },
     { label: 'Quit', click: function() {
@@ -268,7 +328,8 @@ app.on('before-quit', () => {
   isQuitting = true;
 });
 
-ipc.on('change-icon', () => {
+ipc.on('change-icon', (event) => {
+  console.log(event);
   if (!unreadNotification) {
     unreadNotification = true;
     sysTray.setImage(Constants.appIconEvent);
