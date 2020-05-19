@@ -132,7 +132,10 @@ function createWindow () {
         },
         {
           label: 'Reload Application',
-          click () { mainWindow.reload() }
+          click () {
+            app.relaunch({args: process.argv.slice(1).concat(['--relaunch'])});
+            app.exit(0);
+          }
         },
         {
           label: 'Toggle Full Screen',
