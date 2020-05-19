@@ -273,6 +273,8 @@ function center(win) {
 
 setProcess = function() {
   sysTray = new Tray(Constants.appIcon);
+  // Ignore double click events for the tray icon
+  sysTray.setIgnoreDoubleClickEvents(true);
   let contextMenu = menu.buildFromTemplate([
     { label: 'Show', click: function() { showAndCenter(mainWindow); } },
     { label: 'Quit', click: function() {
@@ -326,7 +328,8 @@ app.on('before-quit', () => {
   isQuitting = true;
 });
 
-ipc.on('change-icon', () => {
+ipc.on('change-icon', (event) => {
+  console.log(event);
   if (!unreadNotification) {
     unreadNotification = true;
     sysTray.setImage(Constants.appIconEvent);

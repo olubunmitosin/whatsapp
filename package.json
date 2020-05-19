@@ -1,6 +1,6 @@
 {
   "name": "kesty-whatsapp",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "An unofficial whatsApp client for Linux",
   "main": "main.js",
   "scripts": {
@@ -38,7 +38,6 @@
     }
   },
   "keywords": [
-    "Electron",
     "Whatsapp",
     "social life",
     "social networking",
