@@ -56,7 +56,7 @@ function createWindow () {
   });
 
   //for development
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 
   electronLocalShortcut.register(win, 'Ctrl+F', () => {
     setFullScreen();
