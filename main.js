@@ -7,6 +7,9 @@ const Store = require('electron-store');
 const isDev = require('electron-is-dev');
 const Constants = require('./app/constants');
 const electronLocalShortcut = require('electron-localshortcut');
+// try {
+//   require('electron-reloader')(module)
+// } catch (_) {}
 
 //storage store and key identifier
 const storage = new Store();
@@ -44,13 +47,16 @@ function createWindow () {
     height: height,
     icon: Constants.appIcon,
     webPreferences: {
+      allowRendererProcessReuse : true,
       spellcheck: true,
       nodeIntegration: false, // fails without this because of CommonJS script detection
       allowRunningInsecureContent : true,
       plugins : true,
-      preload: path.join(__dirname, 'js', 'browser.js')
     }
   });
+
+  //for development
+  win.webContents.openDevTools();
 
   electronLocalShortcut.register(win, 'Ctrl+F', () => {
     setFullScreen();
@@ -202,9 +208,8 @@ function createWindow () {
   win.webContents.on('did-finish-load', function () {
     themeData = storage.get(Constants.storageKey+'theme');
     if (typeof themeData !== 'undefined' && themeData === 'dark') {
-      loadDarkCss();
+     setTimeout(() => { loadDarkCss();}, 1000);
     }
-
   });
 
   session.defaultSession.on('will-download', (event, item, webContents) => {
@@ -240,12 +245,8 @@ function setSetting(key, value) {
 }
 
 function loadDarkCss() {
-  fs.readFile(__dirname + '/css/dark.css', 'utf-8',function (error, data) {
-    if(!error){
-      let formattedCss = data.replace(/\s{2,10}/g, ' ').trim();
-      mainWindow.webContents.insertCSS(formattedCss);
-    }
-  });
+  let code = 'document.querySelector("script").remove(); var pageBody = document.querySelector("body"); if (!pageBody.classList.contains("dark")) { pageBody.classList.add("dark"); }';
+      mainWindow.webContents.executeJavaScript(code, true);
 }
 
 
