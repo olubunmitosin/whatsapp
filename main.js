@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, nativeImage, session, Notification } = require('electron');
+const {app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, systemPreferences, nativeImage, session, Notification } = require('electron');
 const path = require('node:path');
 const fs = require('fs');
 const contextMenu = require('electron-context-menu');
@@ -12,6 +12,10 @@ require('update-electron-app')();
 // try {
 //   require('electron-reloader')(module)
 // } catch (_) {}
+
+// Request permission
+const microphone = systemPreferences.askForMediaAccess('microphone');
+const camera = systemPreferences.askForMediaAccess('camera');
 
 //storage store and key identifier
 const storage = new Store();

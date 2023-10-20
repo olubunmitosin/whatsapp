@@ -1,6 +1,7 @@
 node_modules
 dist
 releases
+.DS_Store
 .idea
 .vscode
 kesty-whatsapp_*_amd64.snap
