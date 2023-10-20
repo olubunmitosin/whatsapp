@@ -366,7 +366,7 @@ app.on('before-quit', () => {
 ipc.on('change-icon', (event) => {
   if (!unreadNotification) {
     unreadNotification = true;
-    sysTray.setImage(Constants.appIconEvent);
+    sysTray.setIcon(nativeImage.createFromPath(Constants.appIconEvent));
   }
 });
 
