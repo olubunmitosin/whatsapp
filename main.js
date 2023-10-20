@@ -311,7 +311,8 @@ setProcess = function() {
     { label: 'Quit', click: function() {
         app.quit();
         sysTray.destroy();
-      } }
+      }
+    }
   ]);
 
   sysTray.setTitle(Constants.appName);
