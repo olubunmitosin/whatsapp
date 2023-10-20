@@ -1,6 +1,6 @@
 {
   "name": "kesty-whatsapp",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "An unofficial whatsApp client for Linux",
   "main": "main.js",
   "scripts": {
@@ -9,7 +9,11 @@
     "build:snap": "electron-builder build --linux",
     "build:platform": "electron-builder --linux --x64 --armv7l",
     "build:tar": "electron-builder --linux tar.xz",
-    "build:win": "electron-builder --windows nsis"
+    "build:win": "electron-builder --windows nsis",
+    "forge:start": "electron-forge start",
+    "forge:package": "electron-forge package",
+    "forge:make": "electron-forge make",
+    "forge:publish": "electron-forge publish"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
   "build": {
@@ -48,7 +52,8 @@
   "author": "Olubunmi Tosin",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^27.0.1",
+    "@electron-forge/publisher-github": "^6.4.2",
+    "electron": "^22.3.25",
     "electron-builder": "^24.6.4",
     "electron-reloader": "^1.2.1"
   },
@@ -56,6 +61,7 @@
     "electron-context-menu": "^2.0.0",
     "electron-is-dev": "^1.2.0",
     "electron-localshortcut": "^3.2.1",
-    "electron-store": "^5.1.1"
+    "electron-store": "^5.1.1",
+    "update-electron-app": "^2.0.1"
   }
 }
