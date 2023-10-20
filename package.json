@@ -48,7 +48,7 @@
   "author": "Olubunmi Tosin",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^18.3.7",
+    "electron": "^22.3.25",
     "electron-builder": "^22.13.1",
     "electron-reloader": "^1.2.1"
   },
