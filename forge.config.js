@@ -10,6 +10,12 @@ module.exports = {
           prerelease: false,
           draft: true
         }
+      },
+      {
+        name: '@electron-forge/publisher-snapcraft',
+        config: {
+          release: '[latest/edge, insider/stable]'
+        }
       }
     ]
   }

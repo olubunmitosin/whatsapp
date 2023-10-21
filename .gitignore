@@ -1,5 +1,6 @@
 node_modules
 dist
+out
 releases
 .DS_Store
 .idea
