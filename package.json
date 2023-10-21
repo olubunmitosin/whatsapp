@@ -1,6 +1,6 @@
 {
   "name": "kesty-whatsapp",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "An unofficial whatsApp client for Linux",
   "main": "main.js",
   "scripts": {
@@ -9,7 +9,11 @@
     "build:snap": "electron-builder build --linux",
     "build:platform": "electron-builder --linux --x64 --armv7l",
     "build:tar": "electron-builder --linux tar.xz",
-    "build:win": "electron-builder --windows nsis"
+    "build:win": "electron-builder --windows nsis",
+    "forge:start": "electron-forge start",
+    "forge:package": "electron-forge package",
+    "forge:make": "electron-forge make",
+    "forge:publish": "electron-forge publish"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
   "build": {
@@ -32,15 +36,54 @@
           "arch": [
             "x64",
             "armv7l",
-            "ia32",
             "arm64"
           ]
         }
       ]
     }
   },
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "kesty_whatsapp"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin",
+            "linux"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {
+            "options": {
+              "maintainer": "Olubunmi Tosin",
+              "homepage": "https://github.com/olubunmitosin"
+            }
+          }
+        },
+        {
+          "name": "@electron-forge/maker-snap",
+          "config": {
+            "features": {
+              "audio": true,
+              "webgl": true
+            },
+            "summary": "Whatsapp for Linux"
+          }
+        }
+      ]
+    }
+  },
   "keywords": [
-    "Whatsapp",
+    "whatsapp",
+    "whatsapp web",
     "social life",
     "social networking",
     "social"
@@ -48,14 +91,24 @@
   "author": "Olubunmi Tosin",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^22.3.25",
+    "@electron-forge/cli": "^6.4.2",
+    "@electron-forge/maker-rpm": "^6.4.2",
+    "electron": "^27.0.0",
     "electron-builder": "^24.6.4",
     "electron-reloader": "^1.2.1"
   },
   "dependencies": {
+    "@electron-forge/maker-deb": "^6.4.2",
+    "@electron-forge/maker-snap": "^6.4.2",
+    "@electron-forge/maker-squirrel": "^6.4.2",
+    "@electron-forge/maker-zip": "^6.4.2",
+    "@electron-forge/publisher-github": "^6.4.2",
+    "@electron-forge/publisher-snapcraft": "^6.4.2",
     "electron-context-menu": "^2.0.0",
     "electron-is-dev": "^1.2.0",
     "electron-localshortcut": "^3.2.1",
-    "electron-store": "^5.1.1"
+    "electron-store": "^5.1.1",
+    "rpmbuild": "^0.0.23",
+    "update-electron-app": "^2.0.1"
   }
 }

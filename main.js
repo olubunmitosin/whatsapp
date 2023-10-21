@@ -1,15 +1,18 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, Tray, shell, ipcMain, screen, session, Notification } = require('electron');
-const path = require('path');
+const {app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, platform, systemPreferences, nativeImage, session, Notification } = require('electron');
+const path = require('node:path');
 const fs = require('fs');
 const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
 const isDev = require('electron-is-dev');
 const Constants = require('./app/constants');
 const electronLocalShortcut = require('electron-localshortcut');
+require('update-electron-app')();
+
 // try {
 //   require('electron-reloader')(module)
 // } catch (_) {}
+
 
 //storage store and key identifier
 const storage = new Store();
@@ -57,6 +60,17 @@ function createWindow () {
 
   //for development
   // win.webContents.openDevTools();
+
+  // If platform is darwin
+  if (platform === "darwin") {
+    // Request permission
+    systemPreferences.askForMediaAccess('microphone').then(resp => {
+      //
+    });
+    systemPreferences.askForMediaAccess('camera').then(resp => {
+      //
+    });
+  }
 
   electronLocalShortcut.register(win, 'Ctrl+F', () => {
     setFullScreen();
@@ -191,7 +205,14 @@ function createWindow () {
 
   //Set a default user agent
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36';
+    if (platform === "darwin") {
+      details.requestHeaders['User-Agent'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36";
+    } else if (platform === "win32" || platform === 'win64') {
+      details.requestHeaders['User-Agent'] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36";
+    } else {
+      details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36';
+      // details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (X11; Linux i686; rv:101.0) Gecko/20100101 Firefox/101.0';
+    }
     callback({ cancel: false, requestHeaders: details.requestHeaders });
   });
 
@@ -210,6 +231,30 @@ function createWindow () {
     if (typeof themeData !== 'undefined' && themeData === 'dark') {
      setTimeout(() => { loadDarkCss();}, 1000);
     }
+  });
+
+  win.webContents.on('context-menu', (event, params) => {
+    const menu = new Menu()
+  
+    // Add each spelling suggestion
+    for (const suggestion of params.dictionarySuggestions) {
+      menu.append(new MenuItem({
+        label: suggestion,
+        click: () => myWindow.webContents.replaceMisspelling(suggestion)
+      }))
+    }
+  
+    // Allow users to add the misspelled word to the dictionary
+    if (params.misspelledWord) {
+      menu.append(
+        new MenuItem({
+          label: 'Add to dictionary',
+          click: () => myWindow.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord)
+        })
+      )
+    }
+  
+    menu.popup()
   });
 
   session.defaultSession.on('will-download', (event, item, webContents) => {
@@ -252,7 +297,8 @@ function loadDarkCss() {
 
 function removeDarkCss() {
   setSetting('theme', 'light');
-  mainWindow.reload();
+  let code = 'document.querySelector("script").remove(); var pageBody = document.querySelector("body"); if (pageBody.classList.contains("dark")) { pageBody.classList.remove("dark"); }';
+  mainWindow.webContents.executeJavaScript(code, true);
 }
 
 
@@ -276,7 +322,7 @@ function center(win) {
 
 
 setProcess = function() {
-  sysTray = new Tray(Constants.appIcon);
+  sysTray = new Tray(nativeImage.createFromPath(Constants.appIcon));
   // Ignore double click events for the tray icon
   sysTray.setIgnoreDoubleClickEvents(true);
   let contextMenu = menu.buildFromTemplate([
@@ -284,17 +330,20 @@ setProcess = function() {
     { label: 'Quit', click: function() {
         app.quit();
         sysTray.destroy();
-      } }
+      }
+    }
   ]);
 
+  sysTray.setTitle(Constants.appName);
   sysTray.setToolTip(Constants.appName);
   sysTray.setContextMenu(contextMenu);
-
   sysTray.on('click', () => {
     showAndCenter(mainWindow);
   });
 
   mainWindow = createWindow();
+
+  mainWindow.setOverlayIcon(nativeImage.createFromPath(Constants.appIcon), Constants.appName);
 
   let page = mainWindow.webContents;
 
@@ -325,6 +374,7 @@ app.on('window-all-closed', function () {
 });
 
 app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
   showAndCenter(mainWindow);
 });
 
@@ -333,10 +383,9 @@ app.on('before-quit', () => {
 });
 
 ipc.on('change-icon', (event) => {
-  console.log(event);
   if (!unreadNotification) {
     unreadNotification = true;
-    sysTray.setImage(Constants.appIconEvent);
+    sysTray.setIcon(nativeImage.createFromPath(Constants.appIconEvent));
   }
 });
 
