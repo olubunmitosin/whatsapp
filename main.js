@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, systemPreferences, nativeImage, session, Notification } = require('electron');
+const {app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, platform, systemPreferences, nativeImage, session, Notification } = require('electron');
 const path = require('node:path');
 const fs = require('fs');
 const contextMenu = require('electron-context-menu');
@@ -13,9 +13,6 @@ require('update-electron-app')();
 //   require('electron-reloader')(module)
 // } catch (_) {}
 
-// Request permission
-const microphone = systemPreferences.askForMediaAccess('microphone');
-const camera = systemPreferences.askForMediaAccess('camera');
 
 //storage store and key identifier
 const storage = new Store();
@@ -63,6 +60,17 @@ function createWindow () {
 
   //for development
   // win.webContents.openDevTools();
+
+  // If platform is darwin
+  if (platform === "darwin") {
+    // Request permission
+    systemPreferences.askForMediaAccess('microphone').then(resp => {
+      //
+    });
+    systemPreferences.askForMediaAccess('camera').then(resp => {
+      //
+    });
+  }
 
   electronLocalShortcut.register(win, 'Ctrl+F', () => {
     setFullScreen();
@@ -197,7 +205,14 @@ function createWindow () {
 
   //Set a default user agent
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36';
+    if (platform === "darwin") {
+      details.requestHeaders['User-Agent'] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36";
+    } else if (platform === "win32" || platform === 'win64') {
+      details.requestHeaders['User-Agent'] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36";
+    } else {
+      details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36';
+      // details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (X11; Linux i686; rv:101.0) Gecko/20100101 Firefox/101.0';
+    }
     callback({ cancel: false, requestHeaders: details.requestHeaders });
   });
 
