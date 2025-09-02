@@ -92,7 +92,18 @@ npm run release:major  # Full automated major release
 
 ### Building Snap Packages
 
-#### Remote Build (Recommended for macOS/Windows)
+#### Snapcraft Dashboard (Recommended)
+The easiest way to build is using the Snapcraft dashboard:
+
+1. Go to [snapcraft.io/kesty-whatsapp](https://snapcraft.io/kesty-whatsapp)
+2. Click "Builds" tab
+3. Click "Trigger New Build"
+4. Select architectures to build
+5. Click "Build"
+
+This builds directly from GitHub and supports all architectures automatically.
+
+#### Remote Build (Command Line)
 ```bash
 # Install snapcraft
 brew install snapcraft  # macOS
@@ -110,6 +121,8 @@ npm run build:snap-remote
 ```bash
 npm run build:snap
 ```
+
+For detailed build instructions, see [SNAPCRAFT_DASHBOARD_BUILD.md](SNAPCRAFT_DASHBOARD_BUILD.md).
 
 ### Supported Architectures
 

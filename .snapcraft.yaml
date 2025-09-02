@@ -1,0 +1,5 @@
+# This file ensures Snapcraft finds the configuration in the snap/ directory
+# when building from the Snapcraft dashboard via GitHub integration
+
+# The actual configuration is in snap/snapcraft.yaml
+# This file is just a pointer for the build system

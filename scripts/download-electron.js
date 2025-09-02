@@ -12,7 +12,7 @@ const { execSync } = require('child_process');
 
 function getElectronVersion() {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  return packageJson.devDependencies.electron.replace('^', '');
+  return packageJson.devDependencies.electron.replace(/[\^~]/, '');
 }
 
 function getArchMapping(arch) {

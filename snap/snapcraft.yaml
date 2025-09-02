@@ -1,11 +1,19 @@
 name: kesty-whatsapp
 title: Kesty WhatsApp
-version: '1.2.9'
+version: '1.2.10'
 summary: Unofficial WhatsApp client for Linux
 description: |
   An unofficial WhatsApp client for Linux distributions made with love.
   It is concise, simple, easy and flexible to use. Built with Electron
   to provide a native desktop experience for WhatsApp Web.
+
+  Features:
+  - Native desktop experience for WhatsApp Web
+  - Dark/Light theme support
+  - System notifications and tray integration
+  - Audio/video call support
+  - Multi-architecture support
+  - Secure and sandboxed via Snap packaging
 grade: stable
 confinement: strict
 base: core22
@@ -33,21 +41,35 @@ parts:
         *) ELECTRON_ARCH=x64 ;;
       esac
 
-      ELECTRON_VERSION="27.0.0"
+      ELECTRON_VERSION="37.1.0"
       ELECTRON_URL="https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-linux-${ELECTRON_ARCH}.zip"
 
-      echo "Downloading Electron v${ELECTRON_VERSION} for ${ELECTRON_ARCH}..."
+      echo "=== Downloading Electron v${ELECTRON_VERSION} for ${ELECTRON_ARCH} ==="
       mkdir -p $CRAFT_PART_INSTALL/bin
       cd $CRAFT_PART_INSTALL/bin
 
-      if wget -q "$ELECTRON_URL" -O electron.zip; then
+      # Try multiple download methods for better reliability
+      if wget --timeout=30 --tries=3 "$ELECTRON_URL" -O electron.zip; then
+        echo "Download successful, extracting..."
         unzip -q electron.zip
         rm electron.zip
         chmod +x electron
-        echo "Electron binary downloaded successfully"
+        echo "✅ Electron binary ready for ${ELECTRON_ARCH}"
+        ls -la electron
+      elif curl -L --max-time 30 --retry 3 "$ELECTRON_URL" -o electron.zip; then
+        echo "Download via curl successful, extracting..."
+        unzip -q electron.zip
+        rm electron.zip
+        chmod +x electron
+        echo "✅ Electron binary ready for ${ELECTRON_ARCH}"
+        ls -la electron
       else
-        echo "Failed to download Electron binary, creating placeholder"
-        echo '#!/bin/bash\necho "Electron not available for this architecture"\nexit 1' > electron
+        echo "❌ Failed to download Electron binary for ${ELECTRON_ARCH}"
+        echo "Creating placeholder that will show error message"
+        echo '#!/bin/bash' > electron
+        echo 'echo "❌ Electron binary not available for this architecture: '${ELECTRON_ARCH}'"' >> electron
+        echo 'echo "Please report this issue to the maintainer"' >> electron
+        echo 'exit 1' >> electron
         chmod +x electron
       fi
     prime:
@@ -61,6 +83,8 @@ parts:
     after: [electron]
     build-packages:
       - build-essential
+      - curl
+      - ca-certificates
       - libnss3-dev
       - libatk-bridge2.0-dev
       - libdrm2
@@ -78,6 +102,7 @@ parts:
       - libx11-xcb1
       - libxcb-dri3-0
       - libgtk-3-0
+      - libgbm1
     stage-packages:
       - libnss3
       - libxss1
@@ -95,18 +120,37 @@ parts:
       - libxi6
       - libxtst6
       - libappindicator1
-      - libxrandr2
-      - libasound2
-      - libxss1
-      - libgconf-2-4
+      - libdrm2
+      - libxkbcommon0
+      - libgbm1
+      - libxfixes3
+      - libatspi2.0-0
+      - libsecret-1-0
     override-build: |
+      echo "=== Building kesty-whatsapp application ==="
+
       # Set environment variables to prevent automatic Electron downloads
       export ELECTRON_SKIP_BINARY_DOWNLOAD=1
       export npm_config_cache=/tmp/npm-cache
       export npm_config_target_arch=$CRAFT_ARCH_BUILD_FOR
+      export npm_config_progress=false
+      export npm_config_audit=false
+      export npm_config_fund=false
+
+      echo "Node.js version: $(node --version)"
+      echo "NPM version: $(npm --version)"
+      echo "Target architecture: $CRAFT_ARCH_BUILD_FOR"
+
+      # Clean any existing node_modules
+      rm -rf node_modules package-lock.json
 
       # Install dependencies without post-install scripts
-      npm ci --ignore-scripts --production
+      echo "Installing dependencies..."
+      npm install --ignore-scripts --production --no-optional
+
+      echo "✅ Dependencies installed successfully"
+      echo "Installed packages:"
+      ls -la node_modules/ | head -10
 
       # Run the default npm plugin behavior
       craftctl default

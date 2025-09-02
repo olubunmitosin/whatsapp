@@ -1,6 +1,6 @@
 {
   "name": "kesty-whatsapp",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "description": "An unofficial WhatsApp client for Linux",
   "main": "main.js",
   "scripts": {
@@ -26,7 +26,8 @@
     "release:minor": "node scripts/bump-version.js minor --auto",
     "release:major": "node scripts/bump-version.js major --auto",
     "postinstall": "electron-builder install-app-deps",
-    "prepare-snap": "npm ci --ignore-scripts && npm run postinstall"
+    "prepare-snap": "npm ci --ignore-scripts && npm run postinstall",
+    "validate-build": "node scripts/validate-build-config.js"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
   "build": {
