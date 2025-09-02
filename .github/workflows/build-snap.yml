@@ -1,0 +1,49 @@
+name: Build and Release Snap
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [amd64, arm64, armhf, i386, ppc64el, s390x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build Snap for ${{ matrix.architecture }}
+      uses: snapcore/action-build@v1
+      id: build
+      with:
+        build-for: ${{ matrix.architecture }}
+      
+    - name: Upload Snap artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: snap-package-${{ matrix.architecture }}
+        path: ${{ steps.build.outputs.snap }}
+        
+    - name: Release to Snap Store (on tags)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: snapcore/action-publish@v1
+      env:
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      with:
+        snap: ${{ steps.build.outputs.snap }}
+        release: stable

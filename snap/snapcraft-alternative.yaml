@@ -1,6 +1,6 @@
 name: kesty-whatsapp
 title: Kesty WhatsApp
-version: '1.2.9'
+version: '1.2.8'
 summary: Unofficial WhatsApp client for Linux
 description: |
   An unofficial WhatsApp client for Linux distributions made with love.
@@ -13,9 +13,6 @@ architectures:
   - build-on: amd64
   - build-on: arm64
   - build-on: armhf
-  - build-on: i386
-  - build-on: ppc64el
-  - build-on: s390x
 
 parts:
   electron:
@@ -34,52 +31,39 @@ parts:
         s390x) ELECTRON_ARCH=s390x ;;
         *) ELECTRON_ARCH=x64 ;;
       esac
-
+      
       ELECTRON_VERSION="27.0.0"
       ELECTRON_URL="https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-linux-${ELECTRON_ARCH}.zip"
-
-      echo "Downloading Electron v${ELECTRON_VERSION} for ${ELECTRON_ARCH}..."
+      
       mkdir -p $CRAFT_PART_INSTALL/bin
       cd $CRAFT_PART_INSTALL/bin
-
-      if wget -q "$ELECTRON_URL" -O electron.zip; then
-        unzip -q electron.zip
-        rm electron.zip
-        chmod +x electron
-        echo "Electron binary downloaded successfully"
-      else
-        echo "Failed to download Electron binary, creating placeholder"
-        echo '#!/bin/bash\necho "Electron not available for this architecture"\nexit 1' > electron
-        chmod +x electron
-      fi
+      
+      wget "$ELECTRON_URL" -O electron.zip
+      unzip electron.zip
+      rm electron.zip
+      chmod +x electron
     prime:
-      - bin/electron
+      - bin/
 
   kesty-whatsapp:
-    plugin: npm
+    plugin: dump
     source: .
-    npm-include-node: true
-    npm-node-version: "18.19.0"
-    after: [electron]
     build-packages:
-      - build-essential
-      - libnss3-dev
-      - libatk-bridge2.0-dev
-      - libdrm2
-      - libxkbcommon0
-      - libxss1
-      - libasound2-dev
-      - libxrandr2
-      - libgconf-2-4
-      - libxdamage1
-      - libxcomposite1
-      - libxcursor1
-      - libxtst6
-      - libappindicator1
-      - libc6-dev
-      - libx11-xcb1
-      - libxcb-dri3-0
-      - libgtk-3-0
+      - nodejs
+      - npm
+    override-build: |
+      # Install Node.js dependencies without Electron
+      export ELECTRON_SKIP_BINARY_DOWNLOAD=1
+      npm ci --production --ignore-scripts
+      
+      # Copy application files
+      cp -r . $CRAFT_PART_INSTALL/
+      
+      # Remove unnecessary files
+      rm -rf $CRAFT_PART_INSTALL/node_modules/electron/dist
+      rm -rf $CRAFT_PART_INSTALL/.git
+      rm -rf $CRAFT_PART_INSTALL/snap
+      rm -rf $CRAFT_PART_INSTALL/scripts
     stage-packages:
       - libnss3
       - libxss1
@@ -97,35 +81,11 @@ parts:
       - libxi6
       - libxtst6
       - libappindicator1
-      - libxrandr2
-      - libasound2
-      - libxss1
-      - libgconf-2-4
-    override-build: |
-      # Set environment variables to prevent automatic Electron downloads
-      export ELECTRON_SKIP_BINARY_DOWNLOAD=1
-      export npm_config_cache=/tmp/npm-cache
-      export npm_config_target_arch=$CRAFT_ARCH_BUILD_FOR
-
-      # Install dependencies without post-install scripts
-      npm ci --ignore-scripts --production
-
-      # Run the default npm plugin behavior
-      craftctl default
-    stage:
-      - node_modules/
-      - main.js
-      - package.json
-      - app/
-      - css/
-      - images/
+    after: [electron]
     prime:
-      - node_modules/
-      - main.js
-      - package.json
-      - app/
-      - css/
-      - images/
+      - -snap/
+      - -scripts/
+      - -node_modules/electron/
 
 apps:
   kesty-whatsapp:
