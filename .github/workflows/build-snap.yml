@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture: [amd64, arm64, armhf, i386, ppc64el, s390x]
+        architecture: [amd64, arm64, armhf, ppc64el, s390x]
 
     steps:
     - name: Checkout code

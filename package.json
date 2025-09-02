@@ -9,7 +9,7 @@
     "generate:icons": "./ico.sh",
     "build:snap": "snapcraft",
     "build:snap-remote": "snapcraft remote-build",
-    "build:platform": "electron-builder --linux --x64 --armv7l --arm64 --ia32",
+    "build:platform": "electron-builder --linux --x64 --armv7l --arm64",
     "build:tar": "electron-builder --linux tar.xz",
     "build:win": "electron-builder --windows nsis",
     "clean": "snapcraft clean",
@@ -49,8 +49,7 @@
           "arch": [
             "x64",
             "armv7l",
-            "arm64",
-            "ia32"
+            "arm64"
           ]
         }
       ]

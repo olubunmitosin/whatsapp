@@ -11,7 +11,7 @@ An unofficial WhatsApp client for Linux distributions built with Electron.
 - System notifications
 - System tray integration
 - Audio/video call support
-- Multi-architecture support (amd64, arm64, armhf, i386, ppc64el, s390x)
+- Multi-architecture support (amd64, arm64, armhf, ppc64el, s390x)
 - Secure and sandboxed via Snap packaging
 
 ## Installation
@@ -117,7 +117,6 @@ This application builds for the following architectures:
 - **amd64** - 64-bit Intel/AMD processors
 - **arm64** - 64-bit ARM processors (Apple Silicon, Raspberry Pi 4+)
 - **armhf** - 32-bit ARM processors (Raspberry Pi 2/3)
-- **i386** - 32-bit Intel processors
 - **ppc64el** - 64-bit PowerPC processors
 - **s390x** - IBM System z processors
 
