@@ -1,19 +1,32 @@
 {
   "name": "kesty-whatsapp",
-  "version": "1.2.7",
-  "description": "An unofficial whatsApp client for Linux",
+  "version": "1.2.9",
+  "description": "An unofficial WhatsApp client for Linux",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "dev": "electron . --enable-logging",
     "generate:icons": "./ico.sh",
-    "build:snap": "electron-builder build --linux",
-    "build:platform": "electron-builder --linux --x64 --armv7l",
+    "build:snap": "snapcraft",
+    "build:snap-remote": "snapcraft remote-build",
+    "build:platform": "electron-builder --linux --x64 --armv7l --arm64",
     "build:tar": "electron-builder --linux tar.xz",
     "build:win": "electron-builder --windows nsis",
-    "forge:start": "electron-forge start",
-    "forge:package": "electron-forge package",
-    "forge:make": "electron-forge make",
-    "forge:publish": "electron-forge publish"
+    "clean": "snapcraft clean",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linting configured\" && exit 0",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major",
+    "version:bump": "node scripts/bump-version.js",
+    "version:patch-auto": "node scripts/bump-version.js patch --auto",
+    "version:minor-auto": "node scripts/bump-version.js minor --auto",
+    "version:major-auto": "node scripts/bump-version.js major --auto",
+    "release:patch": "node scripts/bump-version.js patch --auto",
+    "release:minor": "node scripts/bump-version.js minor --auto",
+    "release:major": "node scripts/bump-version.js major --auto",
+    "postinstall": "electron-builder install-app-deps",
+    "prepare-snap": "npm ci --ignore-scripts && npm run postinstall"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
   "build": {
@@ -42,45 +55,6 @@
       ]
     }
   },
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "kesty_whatsapp"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin",
-            "linux"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {
-            "options": {
-              "maintainer": "Olubunmi Tosin",
-              "homepage": "https://github.com/olubunmitosin"
-            }
-          }
-        },
-        {
-          "name": "@electron-forge/maker-snap",
-          "config": {
-            "features": {
-              "audio": true,
-              "webgl": true
-            },
-            "summary": "Whatsapp for Linux"
-          }
-        }
-      ]
-    }
-  },
   "keywords": [
     "whatsapp",
     "whatsapp web",
@@ -98,12 +72,6 @@
     "electron-reloader": "^1.2.1"
   },
   "dependencies": {
-    "@electron-forge/maker-deb": "^6.4.2",
-    "@electron-forge/maker-snap": "^6.4.2",
-    "@electron-forge/maker-squirrel": "^6.4.2",
-    "@electron-forge/maker-zip": "^6.4.2",
-    "@electron-forge/publisher-github": "^6.4.2",
-    "@electron-forge/publisher-snapcraft": "^6.4.2",
     "electron-context-menu": "^2.0.0",
     "electron-is-dev": "^1.2.0",
     "electron-localshortcut": "^3.2.1",

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Kesty WhatsApp
+Comment=Unofficial WhatsApp client for Linux
+Exec=kesty-whatsapp
+Icon=${SNAP}/images/icons/png/256x256.png
+Terminal=false
+Type=Application
+Categories=Network;InstantMessaging;
+StartupWMClass=kesty-whatsapp
+MimeType=x-scheme-handler/whatsapp;
+Keywords=whatsapp;chat;messaging;web;
