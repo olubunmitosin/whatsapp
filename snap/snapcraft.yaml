@@ -25,84 +25,17 @@ architectures:
   - build-on: s390x
 
 parts:
-  electron:
-    plugin: nil
-    build-packages:
-      - wget
-      - unzip
-    override-build: |
-      # Download pre-built Electron for the target architecture
-      case "$CRAFT_ARCH_BUILD_FOR" in
-        amd64) ELECTRON_ARCH=x64 ;;
-        arm64) ELECTRON_ARCH=arm64 ;;
-        armhf) ELECTRON_ARCH=armv7l ;;
-        ppc64el) ELECTRON_ARCH=ppc64 ;;
-        s390x) ELECTRON_ARCH=s390x ;;
-        *) ELECTRON_ARCH=x64 ;;
-      esac
-
-      ELECTRON_VERSION="37.1.0"
-      ELECTRON_URL="https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-linux-${ELECTRON_ARCH}.zip"
-
-      echo "=== Downloading Electron v${ELECTRON_VERSION} for ${ELECTRON_ARCH} ==="
-      mkdir -p $CRAFT_PART_INSTALL/bin
-      cd $CRAFT_PART_INSTALL/bin
-
-      # Try multiple download methods for better reliability
-      if wget --timeout=30 --tries=3 "$ELECTRON_URL" -O electron.zip; then
-        echo "Download successful, extracting..."
-        unzip -q electron.zip
-        rm electron.zip
-        chmod +x electron
-        echo "✅ Electron binary ready for ${ELECTRON_ARCH}"
-        ls -la electron
-      elif curl -L --max-time 30 --retry 3 "$ELECTRON_URL" -o electron.zip; then
-        echo "Download via curl successful, extracting..."
-        unzip -q electron.zip
-        rm electron.zip
-        chmod +x electron
-        echo "✅ Electron binary ready for ${ELECTRON_ARCH}"
-        ls -la electron
-      else
-        echo "❌ Failed to download Electron binary for ${ELECTRON_ARCH}"
-        echo "Creating placeholder that will show error message"
-        echo '#!/bin/bash' > electron
-        echo 'echo "❌ Electron binary not available for this architecture: '${ELECTRON_ARCH}'"' >> electron
-        echo 'echo "Please report this issue to the maintainer"' >> electron
-        echo 'exit 1' >> electron
-        chmod +x electron
-      fi
-    prime:
-      - bin/electron
-
   kesty-whatsapp:
     plugin: npm
     source: .
     npm-include-node: true
-    npm-node-version: "18.19.0"
-    after: [electron]
+    npm-node-version: "20.18.0"
     build-packages:
       - build-essential
+      - wget
+      - unzip
       - curl
       - ca-certificates
-      - libnss3-dev
-      - libatk-bridge2.0-dev
-      - libdrm2
-      - libxkbcommon0
-      - libxss1
-      - libasound2-dev
-      - libxrandr2
-      - libgconf-2-4
-      - libxdamage1
-      - libxcomposite1
-      - libxcursor1
-      - libxtst6
-      - libappindicator1
-      - libc6-dev
-      - libx11-xcb1
-      - libxcb-dri3-0
-      - libgtk-3-0
-      - libgbm1
     stage-packages:
       - libnss3
       - libxss1
@@ -132,29 +65,57 @@ parts:
       # Set environment variables to prevent automatic Electron downloads
       export ELECTRON_SKIP_BINARY_DOWNLOAD=1
       export npm_config_cache=/tmp/npm-cache
-      export npm_config_target_arch=$CRAFT_ARCH_BUILD_FOR
       export npm_config_progress=false
       export npm_config_audit=false
       export npm_config_fund=false
 
-      echo "Node.js version: $(node --version)"
-      echo "NPM version: $(npm --version)"
-      echo "Target architecture: $CRAFT_ARCH_BUILD_FOR"
+      # Download Electron binary for the target architecture first
+      case "$CRAFT_ARCH_BUILD_FOR" in
+        amd64) ELECTRON_ARCH=x64 ;;
+        arm64) ELECTRON_ARCH=arm64 ;;
+        armhf) ELECTRON_ARCH=armv7l ;;
+        ppc64el) ELECTRON_ARCH=ppc64 ;;
+        s390x) ELECTRON_ARCH=s390x ;;
+        *) ELECTRON_ARCH=x64 ;;
+      esac
 
-      # Clean any existing node_modules
-      rm -rf node_modules package-lock.json
+      ELECTRON_VERSION="37.1.0"
+      ELECTRON_URL="https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-linux-${ELECTRON_ARCH}.zip"
 
-      # Install dependencies without post-install scripts
-      echo "Installing dependencies..."
-      npm install --ignore-scripts --production --no-optional
+      echo "Downloading Electron v${ELECTRON_VERSION} for ${ELECTRON_ARCH}..."
+      mkdir -p electron-dist
+      cd electron-dist
 
-      echo "✅ Dependencies installed successfully"
-      echo "Installed packages:"
-      ls -la node_modules/ | head -10
+      if wget --timeout=30 --tries=3 "$ELECTRON_URL" -O electron.zip; then
+        echo "Download successful, extracting..."
+        unzip -q electron.zip
+        rm electron.zip
+        chmod +x electron
+        echo "✅ Electron binary ready"
+      else
+        echo "❌ Failed to download Electron, creating placeholder"
+        echo '#!/bin/bash\necho "Electron not available"\nexit 1' > electron
+        chmod +x electron
+      fi
+
+      cd ..
 
       # Run the default npm plugin behavior
       craftctl default
+
+      # Replace any downloaded Electron with our pre-downloaded version
+      if [ -d "node_modules/electron" ]; then
+        echo "Replacing Electron binary..."
+        rm -rf node_modules/electron/dist
+        mkdir -p node_modules/electron/dist
+        cp -r electron-dist/* node_modules/electron/dist/
+      fi
+
+      echo "✅ Build completed successfully"
+    organize:
+      'node_modules/electron/dist/electron': bin/electron
     stage:
+      - bin/electron
       - node_modules/
       - main.js
       - package.json
@@ -162,6 +123,7 @@ parts:
       - css/
       - images/
     prime:
+      - bin/electron
       - node_modules/
       - main.js
       - package.json
