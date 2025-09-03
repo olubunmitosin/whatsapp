@@ -102,7 +102,7 @@
     "@electron-forge/maker-snap": "^6.4.2",
     "@electron-forge/maker-squirrel": "^6.4.2",
     "@electron-forge/maker-zip": "^6.4.2",
-    "@electron-forge/publisher-github": "^6.4.2",
+    "@electron-forge/publisher-github": "^7.8.3",
     "@electron-forge/publisher-snapcraft": "^6.4.2",
     "electron-context-menu": "^2.0.0",
     "electron-is-dev": "^1.2.0",
