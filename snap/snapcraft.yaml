@@ -147,7 +147,11 @@ parts:
       # this in its own build step, which override-build replaces, so it is done
       # here. The lockfile (v3) requires npm >= 9, so use the Node tarball rather
       # than the core22 archive's npm 8.
-      case "$CRAFT_ARCH_BUILD_FOR" in
+      #
+      # Node runs during the build (npm ci) so it must match the BUILD host
+      # (CRAFT_ARCH_BUILD_ON), not the target. Cross builds run inside an amd64
+      # instance and produce arch-independent node_modules.
+      case "$CRAFT_ARCH_BUILD_ON" in
         amd64) NODE_ARCH=x64 ;;
         arm64) NODE_ARCH=arm64 ;;
         armhf) NODE_ARCH=armv7l ;;
