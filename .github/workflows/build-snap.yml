@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture: [amd64, arm64, armhf, ppc64el, s390x]
+        # Electron ships Linux binaries only for x64, arm64, and armv7l.
+        architecture: [amd64, arm64, armhf]
 
     steps:
     - name: Checkout code
@@ -21,7 +22,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies

@@ -19,9 +19,7 @@ function getArchMapping(arch) {
   const mapping = {
     'amd64': 'x64',
     'arm64': 'arm64',
-    'armhf': 'armv7l',
-    'ppc64el': 'ppc64',
-    's390x': 's390x'
+    'armhf': 'armv7l'
   };
   return mapping[arch] || 'x64';
 }
@@ -102,7 +100,7 @@ function main() {
     console.log('Usage: node scripts/download-electron.js [architecture]');
     console.log('');
     console.log('Supported architectures:');
-    console.log('  amd64, arm64, armhf, ppc64el, s390x');
+    console.log('  amd64, arm64, armhf');
     console.log('');
     console.log('Examples:');
     console.log('  node scripts/download-electron.js amd64');

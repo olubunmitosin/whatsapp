@@ -1,0 +1,10 @@
+/* Fallback dark theme.
+   WhatsApp Web ships its own dark styling keyed off the `dark` class on
+   <body>; this file is injected as a safety net for the root surface only. */
+html, body, body.dark {
+  background-color: #111b21;
+}
+
+body.dark {
+  color-scheme: dark;
+}

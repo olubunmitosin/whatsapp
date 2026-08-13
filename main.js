@@ -1,48 +1,53 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, platform, systemPreferences, nativeImage, session, Notification } = require('electron');
+const fs = require('fs');
+const path = require('path');
+const { app, BrowserWindow, Menu, MenuItem, Tray, shell, ipcMain, screen, systemPreferences, nativeImage, session, Notification } = require('electron');
 const Store = require('electron-store');
 const Constants = require('./app/constants');
 const electronLocalShortcut = require('electron-localshortcut');
-require('update-electron-app')();
 
 // Storage store and key identifier
 const storage = new Store();
 
-// App theme value holder
+const darkCss = fs.readFileSync(path.join(__dirname, 'css', 'dark.css'), 'utf8');
+
+// App state
 let themeData;
 let mainWindow;
 let sysTray;
-let unreadNotification = Constants.unreadNotification;
-let isQuitting = Constants.isQuitting;
-
-// Context menu setup
-require('electron-context-menu')({
-  showInspectElement: false,
-  append: (defaultActions, params) => params.selectionText.trim().length > 0 ? [{
-    label: `Search Google for “${params.selectionText}”`,
-    click: () => shell.openExternal(`https://google.com/search?q=${encodeURIComponent(params.selectionText)}`).then(() => {})
-  }] : []
-});
+let isQuitting = false;
+let unreadCount = 0;
+let darkCssKey = null;
 
 function createWindow() {
-  const { width, height, appIcon, url } = Constants;
+  const { url, appIcon } = Constants;
+  const state = getWindowState();
 
   const win = new BrowserWindow({
-    width,
-    height,
+    x: state.x,
+    y: state.y,
+    width: state.width,
+    height: state.height,
     icon: appIcon,
+    show: false,
+    backgroundColor: '#111b21',
     webPreferences: {
-      allowRendererProcessReuse: true,
       spellcheck: true,
       nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      preload: path.join(__dirname, 'app', 'preload.js'),
+      // Intentionally enabled: some WhatsApp Web media features require it.
       allowRunningInsecureContent: true,
       plugins: true,
     }
   });
 
+  if (state.maximized) win.maximize();
+
   // Development: win.webContents.openDevTools();
 
-  if (platform === "darwin") {
+  if (process.platform === 'darwin') {
     systemPreferences.askForMediaAccess('microphone').then(() => {});
     systemPreferences.askForMediaAccess('camera').then(() => {});
   }
@@ -54,55 +59,99 @@ function createWindow() {
 
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     let userAgent;
-    if (platform === "darwin") {
-      userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"; // Updated Chrome for macOS
-    } else if (platform === "win32" || platform === 'win64') {
-      userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"; // Updated Chrome for Windows
+    if (process.platform === 'darwin') {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
+    } else if (process.platform === 'win32') {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
     } else {
-      userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'; // Updated Chrome for Linux
+      userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
     }
     callback({ cancel: false, requestHeaders: { ...details.requestHeaders, 'User-Agent': userAgent } });
+  });
+
+  // Allow only mic/camera, screen sharing and persistent storage (needed for
+  // calls and local caching); deny everything else.
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(permission === 'media' || permission === 'display-capture' || permission === 'persistent-storage');
   });
 
   win.loadURL(url);
 
   win.on('focus', () => {
-    if (unreadNotification) {
-      unreadNotification = false;
-      sysTray.setImage(Constants.appIcon);
+    if (unreadCount > 0) {
+      unreadCount = 0;
+      setTrayIcon();
+      setBadge(0);
     }
   });
 
   win.webContents.on('did-finish-load', () => {
     themeData = storage.get(Constants.storageKey + 'theme');
     if (themeData === 'dark') {
-      setTimeout(() => loadDarkCss(win), 1000);
+      setTimeout(() => setDarkTheme(win, true), 1000);
     }
   });
 
+  // Spell check + search selection in one context menu
   win.webContents.on('context-menu', (event, params) => {
-    const menu = Menu.buildFromTemplate(params.dictionarySuggestions.map(suggestion => ({
-      label: suggestion,
-      click: () => win.webContents.replaceMisspelling(suggestion)
-    })));
+    const menu = new Menu();
 
     if (params.misspelledWord) {
+      for (const suggestion of params.dictionarySuggestions) {
+        menu.append(new MenuItem({
+          label: suggestion,
+          click: () => win.webContents.replaceMisspelling(suggestion)
+        }));
+      }
+      menu.append(new MenuItem({ type: 'separator' }));
       menu.append(new MenuItem({
         label: 'Add to dictionary',
         click: () => win.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord)
       }));
+      menu.append(new MenuItem({ type: 'separator' }));
     }
 
-    menu.popup();
+    const selection = (params.selectionText || '').trim();
+    if (selection) {
+      menu.append(new MenuItem({
+        label: `Search Google for “${selection}”`,
+        click: () => shell.openExternal(`https://google.com/search?q=${encodeURIComponent(selection)}`)
+      }));
+    }
+
+    if (menu.items.length > 0) {
+      menu.popup({ window: win });
+    }
   });
 
-  session.defaultSession.on('will-download', () => {
-    win.allowRendererProcessReuse = true;
-    win.blur();
+  // Open external links in the system browser instead of app windows
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
   });
 
-  win.on('close', e => {
-    if (!isQuitting) {
+  win.webContents.on('will-navigate', (event, url) => {
+    let external = true;
+    try {
+      external = new URL(url).hostname !== 'web.whatsapp.com';
+    } catch (error) {
+      external = true;
+    }
+    if (external) {
+      event.preventDefault();
+      if (/^https?:/i.test(url)) {
+        shell.openExternal(url);
+      }
+    }
+  });
+
+  win.on('close', (e) => {
+    saveWindowState(win);
+    // Only hide-to-tray when a tray is actually available; otherwise close
+    // normally so the app never becomes invisible and unreachable.
+    if (!isQuitting && sysTray) {
       e.preventDefault();
       win.hide();
     }
@@ -112,7 +161,10 @@ function createWindow() {
 }
 
 function notify(title, message) {
-  new Notification({ title, body: message }).show();
+  if (!Notification.isSupported()) return;
+  const notification = new Notification({ title, body: message, icon: Constants.appIcon });
+  notification.on('click', () => showAndCenter(mainWindow));
+  notification.show();
 }
 
 function setSetting(key, value) {
@@ -120,39 +172,50 @@ function setSetting(key, value) {
   themeData = storage.get(Constants.storageKey + 'theme');
 }
 
-function loadDarkCss(win) {
-  win.webContents.executeJavaScript('document.querySelector("script").remove(); document.body.classList.toggle("dark", true);', true);
+function setDarkTheme(win, enabled) {
+  win.webContents.executeJavaScript(`document.body.classList.toggle('dark', ${enabled});`, true);
+  if (enabled && darkCssKey === null && darkCss) {
+    win.webContents.insertCSS(darkCss).then((key) => {
+      darkCssKey = key;
+    }).catch(() => {});
+  } else if (!enabled && darkCssKey !== null) {
+    const key = darkCssKey;
+    darkCssKey = null;
+    win.webContents.removeInsertedCSS(key).catch(() => {});
+  }
 }
 
-function removeDarkCss(win) {
-  setSetting('theme', 'light');
-  win.webContents.executeJavaScript('document.querySelector("script").remove(); document.body.classList.toggle("dark", false);', true);
+function setTheme(win, theme) {
+  setSetting('theme', theme);
+  setDarkTheme(win, theme === 'dark');
 }
 
 function showAndCenter(win) {
-  const { width, height } = Constants;
-  const size = screen.getPrimaryDisplay().workAreaSize;
-  win.setPosition(Math.round(size.width / 2 - width / 2), Math.round(size.height / 2 - height / 2));
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
 }
 
 function setFullScreen(win) {
-  win.setFullScreen(!win.isFullScreen());
-  notify('Fullscreen Enabled', 'Press Esc key to leave full screen mode.');
+  const next = !win.isFullScreen();
+  win.setFullScreen(next);
+  if (next) {
+    notify('Fullscreen Enabled', 'Press Esc key to leave full screen mode.');
+  }
 }
 
 function loadMenu(win) {
   const template = [
     {
       label: 'File',
-      submenu: [{ label: 'Exit', click: () => app.exit() }]
+      submenu: [{ label: 'Exit', click: () => app.quit() }]
     },
     {
       label: 'Theme',
       submenu: [
-        { label: 'Light', click: () => (themeData !== 'light' && removeDarkCss(win)) },
-        { label: 'Dark', click: () => (themeData !== 'dark' && setSetting('theme', 'dark') && loadDarkCss(win)) }
+        { label: 'Light', click: () => (themeData !== 'light' && setTheme(win, 'light')) },
+        { label: 'Dark', click: () => (themeData !== 'dark' && setTheme(win, 'dark')) }
       ]
     },
     {
@@ -180,17 +243,16 @@ function handleSoundNotificationSound(win) {
 
 function clearAppData() {
   const dataPath = app.getPath('userData');
-  try {
-    shell.trashItem(dataPath).then(() => {
-      app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) });
-      app.exit(0);
-      sysTray.destroy();
-    }).catch(error => {
-      console.error("Error moving to trash:", error);
-    });
-  } catch (error) {
-    console.error("Error moving to trash:", error);
+  if (!fs.existsSync(dataPath)) {
+    reloadApp();
+    return;
   }
+  shell.trashItem(dataPath).then(() => {
+    reloadApp();
+  }).catch(error => {
+    console.error('Error moving app data to trash:', error);
+    notify('Clear App Data', 'Could not clear app data.');
+  });
 }
 
 function reloadApp() {
@@ -198,55 +260,119 @@ function reloadApp() {
   app.exit(0);
 }
 
+function setBadge(count) {
+  if (!mainWindow) return;
+  try {
+    if (process.platform === 'darwin') {
+      app.dock.setBadge(count > 0 ? String(count) : '');
+    } else {
+      mainWindow.setBadgeCount(count);
+    }
+  } catch (error) { /* badge not supported by this desktop environment */ }
+}
+
+function setTrayIcon() {
+  if (!sysTray) return;
+  const icon = nativeImage.createFromPath(unreadCount > 0 ? Constants.appIconEvent : Constants.appIconTray);
+  if (process.platform === 'linux') {
+    sysTray.setIcon(icon);
+  } else {
+    sysTray.setImage(icon);
+  }
+}
+
 function setupTray() {
-  sysTray = new Tray(nativeImage.createFromPath(Constants.appIcon));
-  sysTray.setIgnoreDoubleClickEvents(true);
-  sysTray.setToolTip(Constants.appName);
-  sysTray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Show', click: () => showAndCenter(mainWindow) },
-    { label: 'Quit', click: () => { app.quit(); sysTray.destroy(); } }
-  ]));
-  sysTray.on('click', () => showAndCenter(mainWindow));
+  try {
+    sysTray = new Tray(nativeImage.createFromPath(Constants.appIconTray));
+    if (process.platform !== 'linux') {
+      sysTray.setIgnoreDoubleClickEvents(true);
+    }
+    sysTray.setToolTip(Constants.appName);
+    sysTray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Show', click: () => showAndCenter(mainWindow) },
+      { label: 'Quit', click: () => { app.quit(); sysTray.destroy(); } }
+    ]));
+    sysTray.on('click', () => showAndCenter(mainWindow));
+  } catch (error) {
+    console.error('System tray unavailable:', error);
+    sysTray = null;
+  }
 }
 
 function setupMainWindow() {
   mainWindow = createWindow();
-  mainWindow.setOverlayIcon(nativeImage.createFromPath(Constants.appIcon), Constants.appName);
-
   mainWindow.webContents.on('dom-ready', () => showAndCenter(mainWindow));
-  mainWindow.webContents.on('new-window', (e, url) => {
-    e.preventDefault();
-    shell.openExternal(url);
-  });
 }
-function handleIconChange() {
-  if (!unreadNotification) {
-    unreadNotification = true;
-    sysTray.setIcon(nativeImage.createFromPath(Constants.appIconEvent));
+
+function handleUnreadChange(event, info) {
+  const count = Math.max(0, Number(info && info.count) || 0);
+  const hadUnread = unreadCount > 0;
+  unreadCount = count;
+  setTrayIcon();
+  setBadge(count);
+
+  // Notify about new messages only when the window is not in focus
+  if (count > 0 && !hadUnread && mainWindow && !mainWindow.isFocused()) {
+    const message = (info && info.text)
+      ? `New message from ${info.text}`
+      : `You have ${count} new message${count === 1 ? '' : 's'}.`;
+    notify(Constants.appName, message);
   }
 }
 
+function getWindowState() {
+  const defaultState = { width: Constants.width, height: Constants.height };
+  const saved = storage.get(Constants.storageKey + 'windowBounds');
+  if (!saved || typeof saved !== 'object') return defaultState;
+
+  const workArea = screen.getPrimaryDisplay().workArea;
+  const width = Math.max(320, Number(saved.width) || Constants.width);
+  const height = Math.max(320, Number(saved.height) || Constants.height);
+  const x = Math.min(Math.max(Number(saved.x) || 0, workArea.x), Math.max(workArea.x, workArea.x + workArea.width - width));
+  const y = Math.min(Math.max(Number(saved.y) || 0, workArea.y), Math.max(workArea.y, workArea.y + workArea.height - height));
+  return { x, y, width, height, maximized: !!saved.maximized };
+}
+
+function saveWindowState(win) {
+  if (!win || win.isDestroyed()) return;
+  const bounds = win.getNormalBounds();
+  storage.set(Constants.storageKey + 'windowBounds', {
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    maximized: win.isMaximized()
+  });
+}
+
 // Event listeners
-app.whenReady().then(() => {
-  setupTray();
-  setupMainWindow();
-});
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => showAndCenter(mainWindow));
+
+  app.whenReady().then(() => {
+    setupTray();
+    setupMainWindow();
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
-    sysTray.destroy();
   }
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) setupMainWindow();
-  showAndCenter(mainWindow);
+  if (BrowserWindow.getAllWindows().length === 0) {
+    setupMainWindow();
+  } else {
+    showAndCenter(mainWindow);
+  }
 });
 
 app.on('before-quit', () => {
   isQuitting = true;
 });
 
-ipcMain.on('change-icon', handleIconChange);
-ipcMain.on('notification-click', () => showAndCenter(mainWindow));
+ipcMain.on('unread-changed', handleUnreadChange);

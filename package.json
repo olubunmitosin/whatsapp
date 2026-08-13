@@ -1,6 +1,6 @@
 {
   "name": "kesty-whatsapp",
-  "version": "1.2.9",
+  "version": "1.3.0",
   "description": "An unofficial WhatsApp client for Linux",
   "main": "main.js",
   "scripts": {
@@ -13,8 +13,8 @@
     "build:tar": "electron-builder --linux tar.xz",
     "build:win": "electron-builder --windows nsis",
     "clean": "snapcraft clean",
-    "test": "echo \"No tests specified\" && exit 0",
-    "lint": "echo \"No linting configured\" && exit 0",
+    "test": "node scripts/smoke-test.js",
+    "lint": "node --check main.js && node --check app/preload.js && node --check app/constants.js && node --check scripts/smoke-test.js && node --check scripts/validate-build-config.js",
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",
     "version:major": "node scripts/bump-version.js major",
@@ -26,7 +26,8 @@
     "release:minor": "node scripts/bump-version.js minor --auto",
     "release:major": "node scripts/bump-version.js major --auto",
     "postinstall": "electron-builder install-app-deps",
-    "prepare-snap": "npm ci --ignore-scripts && npm run postinstall"
+    "prepare-snap": "npm ci --ignore-scripts && npm run postinstall",
+    "validate-build": "node scripts/validate-build-config.js"
   },
   "repository": "https://github.com/olubunmitosin/whatsapp",
   "build": {
@@ -65,16 +66,12 @@
   "author": "Olubunmi Tosin",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^27.0.0",
+    "electron": "^43.4.0",
     "electron-builder": "^24.13.3",
     "electron-reloader": "^1.2.1"
   },
   "dependencies": {
-    "electron-context-menu": "^2.0.0",
-    "electron-is-dev": "^1.2.0",
     "electron-localshortcut": "^3.2.1",
-    "electron-store": "^5.1.1",
-    "rpmbuild": "^0.0.23",
-    "update-electron-app": "^2.0.1"
+    "electron-store": "^5.1.1"
   }
 }
