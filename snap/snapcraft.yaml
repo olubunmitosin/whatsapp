@@ -59,12 +59,11 @@ parts:
       - bin/electron
 
   kesty-whatsapp:
-    plugin: npm
+    plugin: nil
     source: .
-    npm-include-node: true
-    npm-node-version: "20.18.0"
     after: [electron]
     build-packages:
+      - wget
       - build-essential
       - libnss3-dev
       - libatk-bridge2.0-dev
@@ -104,16 +103,36 @@ parts:
       - libatspi2.0-0
       - libsecret-1-0
     override-build: |
-      # Set environment variables to prevent automatic Electron downloads
+      set -e
+
+      # Install Node.js as a build-time tool only. The npm plugin normally does
+      # this in its own build step, which override-build replaces, so it is done
+      # here. The lockfile (v3) requires npm >= 9, so use the Node tarball rather
+      # than the core22 archive's npm 8.
+      case "$CRAFT_ARCH_BUILD_FOR" in
+        amd64) NODE_ARCH=x64 ;;
+        arm64) NODE_ARCH=arm64 ;;
+        armhf) NODE_ARCH=armv7l ;;
+        *) NODE_ARCH=x64 ;;
+      esac
+      NODE_VERSION="20.18.0"
+      NODE_TARBALL="node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"
+      mkdir -p /tmp/node
+      wget -q "https://nodejs.org/dist/v${NODE_VERSION}/${NODE_TARBALL}" -O /tmp/node.tar.gz
+      tar -xzf /tmp/node.tar.gz -C /tmp/node --strip-components=1
+      export PATH="/tmp/node/bin:$PATH"
       export ELECTRON_SKIP_BINARY_DOWNLOAD=1
       export npm_config_cache=/tmp/npm-cache
-      export npm_config_target_arch=$CRAFT_ARCH_BUILD_FOR
 
-      # Install dependencies without post-install scripts
+      # Install runtime dependencies only (devDependencies, including the
+      # prebuilt Electron, are skipped). --ignore-scripts prevents the Electron
+      # postinstall from downloading its binary.
+      cd "$CRAFT_PART_BUILD"
       npm ci --ignore-scripts --production
 
-      # Run the default npm plugin behavior
-      craftctl default
+      # Assemble the application into the part install dir
+      cp -r main.js package.json app css images "$CRAFT_PART_INSTALL/"
+      cp -r node_modules "$CRAFT_PART_INSTALL/"
     stage:
       - node_modules/
       - main.js
