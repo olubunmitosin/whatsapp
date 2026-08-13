@@ -23,9 +23,13 @@ source-code: https://github.com/olubunmitosin/whatsapp
 website: https://github.com/olubunmitosin/whatsapp
 license: CC0-1.0
 architectures:
+  # Build all three targets from an amd64 host (VPS) via LXD/qemu
   - build-on: amd64
-  - build-on: arm64
-  - build-on: armhf
+    build-for: amd64
+  - build-on: amd64
+    build-for: arm64
+  - build-on: amd64
+    build-for: armhf
 
 parts:
   electron:
