@@ -23,12 +23,15 @@ source-code: https://github.com/olubunmitosin/whatsapp
 website: https://github.com/olubunmitosin/whatsapp
 license: CC0-1.0
 architectures:
-  # Build all three targets from an amd64 host (VPS) via LXD/qemu
+  # Each architecture is built natively in a target-arch environment (an LXD
+  # instance emulated via qemu on the amd64 VPS). Cross-building with
+  # --build-for runs in a host-arch instance and stages host-arch packages,
+  # producing snaps with the wrong libraries, so host must equal target.
   - build-on: amd64
     build-for: amd64
-  - build-on: amd64
+  - build-on: arm64
     build-for: arm64
-  - build-on: amd64
+  - build-on: armhf
     build-for: armhf
 
 parts:
